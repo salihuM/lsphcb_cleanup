@@ -1,0 +1,23 @@
+BEGIN;
+
+-- Create a temporary view to identify redundant categories
+CREATE TEMPORARY VIEW _bao_redundant_categories AS
+SELECT categoryid, uid, name 
+FROM dataelementcategory 
+WHERE categoryid NOT IN (
+    SELECT categoryid 
+    FROM categorycombos_categories
+);
+
+-- Delete redundant categories based on the temporary view
+
+DELETE FROM users_catdimensionconstraints 
+WHERE dataelementcategoryid IN (SELECT categoryid FROM _bao_redundant_categories);
+
+DELETE FROM categories_categoryoptions 
+WHERE categoryid IN (SELECT categoryid FROM _bao_redundant_categories);
+
+DELETE FROM dataelementcategory 
+WHERE categoryid IN (SELECT categoryid FROM _bao_redundant_categories);
+
+ROLLBACK;
