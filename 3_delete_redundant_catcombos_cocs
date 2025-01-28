@@ -1,0 +1,61 @@
+BEGIN;
+
+-- Create a temporary view to identify redundant categorycombos
+CREATE TEMPORARY VIEW _bao_redundant_cc AS
+SELECT 
+    cc.categorycomboid AS cc_id, 
+    cc.uid AS cc_uid, 
+    substring(cc.name, 0, 50) AS cc_name,
+    (
+        SELECT COUNT(*)
+        FROM datavalue dv
+        INNER JOIN categorycombos_optioncombos ccoc 
+        ON dv.categoryoptioncomboid = ccoc.categoryoptioncomboid
+        WHERE ccoc.categorycomboid = cc.categorycomboid
+    ) AS dv_count
+FROM categorycombo cc
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM dataelement de
+    WHERE de.categorycomboid = cc.categorycomboid
+)
+AND NOT EXISTS (
+    SELECT 1
+    FROM dataset ds
+    WHERE ds.categorycomboid = cc.categorycomboid
+)
+AND NOT EXISTS (
+    SELECT 1
+    FROM program p
+    WHERE p.categorycomboid = cc.categorycomboid
+);
+
+-- Create a temporary view to identify redundant categoryoptioncombos
+CREATE TEMPORARY VIEW _bao_redundant_coc AS
+SELECT categoryoptioncomboid 
+FROM categoryoptioncombo 
+WHERE categoryoptioncomboid IN (
+    SELECT categoryoptioncomboid 
+    FROM categorycombos_optioncombos 
+    WHERE categorycomboid IN (SELECT cc_id FROM _bao_redundant_cc)
+);
+
+-- Delete from dependent tables
+DELETE FROM datavalue 
+WHERE categoryoptioncomboid IN (SELECT categoryoptioncomboid FROM _bao_redundant_coc);
+
+DELETE FROM categorycombos_optioncombos 
+WHERE categorycomboid IN (SELECT cc_id FROM _bao_redundant_cc);
+
+DELETE FROM categorycombos_categories 
+WHERE categorycomboid IN (SELECT cc_id FROM _bao_redundant_cc);
+
+-- Delete redundant categoryoptioncombos
+DELETE FROM categoryoptioncombo 
+WHERE categoryoptioncomboid IN (SELECT categoryoptioncomboid FROM _bao_redundant_coc);
+
+-- Delete redundant categorycombos
+DELETE FROM categorycombo 
+WHERE categorycomboid IN (SELECT cc_id FROM _bao_redundant_cc);
+
+COMMIT;
