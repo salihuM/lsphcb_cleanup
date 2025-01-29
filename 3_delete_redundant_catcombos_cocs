@@ -1,61 +1,57 @@
 BEGIN;
 
--- Create a temporary view to identify redundant categorycombos
-CREATE TEMPORARY VIEW _bao_redundant_cc AS
-SELECT 
-    cc.categorycomboid AS cc_id, 
-    cc.uid AS cc_uid, 
-    substring(cc.name, 0, 50) AS cc_name,
-    (
-        SELECT COUNT(*)
-        FROM datavalue dv
-        INNER JOIN categorycombos_optioncombos ccoc 
-        ON dv.categoryoptioncomboid = ccoc.categoryoptioncomboid
-        WHERE ccoc.categorycomboid = cc.categorycomboid
-    ) AS dv_count
-FROM categorycombo cc
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM dataelement de
-    WHERE de.categorycomboid = cc.categorycomboid
-)
-AND NOT EXISTS (
-    SELECT 1
-    FROM dataset ds
-    WHERE ds.categorycomboid = cc.categorycomboid
-)
-AND NOT EXISTS (
-    SELECT 1
-    FROM program p
-    WHERE p.categorycomboid = cc.categorycomboid
-);
+-- Create a temporary support table for data elements to be deleted
+CREATE TEMP TABLE _bao_redundant_cc AS 
+SELECT categorycomboid, uid 
+FROM categorycombo 
+WHERE uid IN ('kNvVQJSGkg4','V9ocoqbjimn','feg7FLVdjq4','uiHRdRkixnN','D3T6ekS6tGZ','MYoGqANnTeG','m5nEPioE2VP','XX6dfy9wcaQ','Xl3avgwdp3V','fwqYEW9H0GD','ceevin3uLFs','bT7mw0TT26n','zQ9cHnSa6dg','k4HXa2iKbdx','pCezHvnPF5M','o2OwcepTwtn','C25suc97SXP','Snp4Gfiw62I','M9Z0fhIezWN','OKezZRC2KIP','mw5GOq3CyUA','GsO76IS4PH7','TVDK8YqNUVf','Z0WpPKrpJaj','H1dKg7d7nWq','ytTXpLoGjJT','OuqslKM3MOO','NiYV03tX64e','K7KID9n6XPF','QCUqLpsbuBE','BZfOIAHcPUh','zeRBAKSjxYo','w7AwYSIYe3d','tS3rBAvlzfJ','bpCNrYj2IyM','alN7UW3pwle','bH2xCmWLSFI','F7gxOZEY1Ho','tA5UiMV7lzD','vb0QMFiL1L4','BRSRBQSOYtH','pWrOPqBYgfq','CvW7eyf3vZQ','f4gR8tOvdmf','cMpGGfeTwzO','uwj0Ae2vjLs','VAqbNxHtwiM','v0qbunBOHNf','MAZyiUdEwyD','pporHKNSsBq','P9NKEXPDxiV','Qu8kB0s3Ocj','BrmIH47KJH6','I9AY8b4BO2Y','oh6swwS9ecz','E17j1L726lC','f6BqewzTFP7','NCA0CIgFbyM','fU6LYVKKsFm','ueEi9La8su8','RVr3vLusYHX','LyZHJvBdvkr','WzDOg91m4bG','WCUhUu0bYhk','ZqjAFRviEoA');
 
--- Create a temporary view to identify redundant categoryoptioncombos
-CREATE TEMPORARY VIEW _bao_redundant_coc AS
-SELECT categoryoptioncomboid 
+-- Verify redundant categorycombos
+SELECT COUNT(*) AS redundant_cc_count 
+FROM categorycombo 
+WHERE categorycomboid IN (SELECT categorycomboid FROM _bao_redundant_cc);
+
+
+CREATE TEMP TABLE _bao_redundant_coc AS 
+SELECT categoryoptioncomboid, uid 
 FROM categoryoptioncombo 
-WHERE categoryoptioncomboid IN (
-    SELECT categoryoptioncomboid 
-    FROM categorycombos_optioncombos 
-    WHERE categorycomboid IN (SELECT cc_id FROM _bao_redundant_cc)
-);
+WHERE uid IN ('U737jVmzYgv','QDga2y16LZj','hjFZUHaIPjL','KM2YbPwmMdz','VoOyjLB5AAV','mQvAQb4F87m','VlWmiRBgNCd','EG7pus7Ngu3','j78BJ23V48i','Z5TLh4NJqkc','L7EdWO9sIrL','TO1DwJR3N9X','DgAeHy51LhK','k3rx5b4V0EK','amkPQhHIM9p','KfPJ0FXLcXB','iIy6y6LZpUM','xIX2nXBedZU','JmfqYwvdxGW','YGn6GQGa2KA','PCJrSmSpNXZ','qpZ3qDx9y2E','Kp0ErgdPgHh','dkC0autiiA3','d9FD3DV16NC','HUyfsyDv4PS','EXeNdwKrWJ4','YMHWJHRSW9o','n2qPYngYjse','H6qDqSjnSN4','NTgyddUjnFS','eQz78J1yuVa','AmqsS5GTLCv','UQWq6pp9RJb','gNdYV1VKVyh','kWIOCYMv1jf','gMtLLPrriKI','rHKg0ourxs6','XetywyJxihq','wqTaPytDoYD','x7VzBMuqDtr','gTEUjOU8r7M','RUqhMea7jmz','wMJTKzpUvVI','BzPNYVVjveV','sF6TaZ6rH26','LjZO61ZHOTs','rRDHUdBFN1v','G4tFN64PSJG','QAak8a6Uesa','Y8CkfUfJOAc','cKvwquvcJjV','d2l4gi7CBAE','uGH8zsnjrsQ','jHfPhfiB6jX','eWRiEsAm1nR','b0D36YXEFTm','gre4hhFVkWH','S7EKZ3wRBhO','gfa0g9utj2F','uJC6OzCYz1q','ULsvaSpnpz1','KHvKGUGpaEs','iEfDf9ZZjtf','Kxg7taQF0Sv','W50DgZrPrUk','afeWOYKgtgV','cDJ7eJFoyhf','LM5Y5FDt2TN','U83hf7Elwax','cQ1m8fsZopX','PsdQ2HyAM8a','cDRRzbkxXag','waUyd2WLLBl','YZfEE2cBZIB','qZITn8nZNJP','hsbJAN9ybbY','xgH5DWJgs0d','edHSGhlk1fF','Fxex39XxbWA','OK9O37w0Pbk','LC0S4JK3P2d','Gejt3IKiJGl','RfTKb4jDtq6','UXoIQH1mb8s','WFEgQk5QvI1','lxbva9CpNHU','BBI7MS2OxG3','dGeEios6QDK','Rym3NiW8Kzq','s7XaqjufenV','HgUpVNUKFdL','OVM8PdERK4M','lbb1BoI8WEg','ItGQGDRFD4t','qgSdFveTjqs','AkYqFuniokB','SnAKd0uu17a','UhOso3XB5TH','sT8rAd7igU8','fMqeJTk7dxL','TLiu4NaXxv9','GwHzHtFfVN2','hFmqFPxv3YZ','G8fy4u8ufYq','MNghmaftUP8','XHzzfc0eFWk','qcpbM9XyCk3','ZqV56EWxQYz','ZfIZMUf6TYb','NWefOh0CQxa','uJpwNd13RMT','TGCieDm5Caf','pvklsfCMeA6','Iu9vbMp6hyD','YlsSLyBMD4l','XGOi7R8Wl9s','K9Qg5RSEP1j','Ruk0BHcABfD','Zvipx4EwIb8','SDzZZ36WhZN','DELmgBxpTLj','I68eI97C1uj','NwE3aMzaD3U','VJiKrCdpdma','lCFAYr8dz34','e0V25NaEqEo','mDXZy7RcFah','WLYng6NputC','u4LjTOUYUoG','VPiJUVdL4TM','lAE0RIMskyG','LqZendAlwvE','eLLsAvWo4RV','JsdkZuOQgSj','nOThAWVKgkB','RoRAGpolQQP','uXgKroa3Qpr','GjoZt0KShRS','BYIv5KHE04m','cb2Pd5i1HAZ','n3JyEpoVhH6','yj2bFpFzkvq','vZG8V4orALb','roN0R69DKei','Iv0SSu9Vf9P','GpBtfL5Zbgn','mDrlCrRm1I1','EDAuN8MhOiL','Edj6xrK30GQ','ehxdCvRNiDI','ToNzwZ3X4fs','AQg8DZjcKfr','Qw3zZg1ZMv0','h4ekTt0GopX','CCXko7YUy3H','AovDjRhEMLF','KqoboWlQP1k','M9t1tQNYeUS','R3kEhtOLCMY','DhXyIMLZYW2','hG0GEVoheBY','mdpJIsYb1uG','LzMBIL6FwxK','YpsrgdxKsUw','MFEWrPRewfm','BdD4sI5rZ3T','tKT9Hy6kUzX','XruJp4NYvUE','MAUrijzmdco','Ss66JvWHeu2','NdHJpiT98zw','lo7h8zjx7bG','SOj190dgha3','PhbuUYuRch5','NcQKIFXkeP6','PDMDO7RUo5t','axVd64pF3yg','ZebWvNyvFBD','s06wTVbIEMH','z6roPJF0sRX','qwvBTzT5Nez','LyFgvClDedr','DSZsyzD98M0','u8xsz4aqkXq','mMZjyyDnnGY','GeoTVuVztHg','p6tgM81v8j3','UE5EAuZDymV','NWwlHwoCg1V','ZQ58Cut0jlY','kU83OOnzqWh','UYMGCQDgVJf','IFcpcdJQLxr','p6Q7a9LGwNn','MgAu9S7A7Rz','FpibJQrsxl7','nYUtCqIT4OE','eECYV4eHLd1','t4cejaxKpRY','pIVcwJfdfbE','XevirHSBHEJ','WtG76HGalGL','DeavrJ3Eyc7','JeRCuu0ieFo','pq52GBJb2W5','m2ONbl8cs0J','uSOBbRS9Lcs','xa61suAEq8C','F71YSa9b1VO','W6YkAOHM29W','WHriGsFB8s8','QgN4kxs4on5','ZJqNAlUvE2D','eVVPMNgEHgG','oGGrn8SJb2F','xbnY44Z32uS','qXliXe1nDbZ','nOrN4opOy6L','Buc6EQ9zCyM','sCDncPfbSEk','PO2hBhliK38','qhF0p1kUAw2','xn40T7la7dn','oTyRaXUNgCG','JBmlANT4haY','Wi3q6bko9wh','uYMcrNk3wwu','LHmvbVh0ecH','tCkoNxJhZHq','umqZLi83miW','GCE32BxgRmM','e5eeFKgv9Bl','CzSpbg7B20R','fi1vWOkoL2Q','tOLdetRd3Ay','d3m3aqeR3kg','O5TreGyqjj7','xpkIuBlml2y','HSIcSeOCCcb','MYWIcYjSCTb','gCtmBZfyEY2','KfYkf5rVctc','nDyOu4edDFo','RX7gadM4xKy','AQhZZ922HD9','v9tIsZdWnMM','jf5yMsjY36H','tY11tHEt669','RzYxUSNmztV','dqk2iem2pSR','DiJRG83Y06L','VLR5ZjJlhHv','qdGED93UBKX','m41cPLdbHUc','FdgAaFi41bv','FXKgGshORLz','un74VeCfhOc','ScVQyExta0M','J7XPwNbmV77','Ctuj8F0dEkl','OOUYWxeSGx9','ywKR8XGZ1uP','utga0WQPk2V','irE92WqFE6a','MiFezI2kERc','rNwfgGtg9K7','j48Jx9fQfqg','tHFI2eqVKN2','zgE1HH19aeb','Glazjx2IMtl','QjSpLNyJhp7','TnMQud3mMZZ','ne1bsGA7GhQ','BXKrZRIYRDa','iFjea6zn4S7','MKZfcYrFfgD','A1eBytFw67V','OUdcJmW2hhN','NKNydvIgEey','Dyu9L3iPxXe','UP6loZvVCUr','TilX5UfMu4i','ZFhl3uadK4S','yJDDuGIqte0','kDXQ6D6yYAB','Mo7UcEernZW','umgRViUcDa5','tdbOwwmKV3G','YdAHArWqPvi','c3Niy9h9xOV','qaXsR1kTaRd','kqdv02BzArC','vDbonsKuRIi','do0y8dawZ0y','iESMrjlg2Q4','A9w2MBtF9F7','nFG5gHvlKOw','De5G1LdYXhs','Rpc8dQJFJNH','wmvtstQNVh2','UqgAfHXJQhd','KI0XkGg3fpc','vmG6vHvXeit','qnaUKwRl0uw','MhgKeRxliSn','v5ey2dHEzgK','wIyP4D4Na7P','mJhKEKm1l1W','oiA8pUMOc7T','B0MIxAvMvUN','BsxSOhWKrLU','YfDLq5CSIdL','O4xWYcyxRX3','vR6xGxF9oi8','rsPsE9ONqT3','QpCjcUjejTO','j0Cp0ehtY1j','LTRxGjWjz6p','Uxg1Em2510m','czdgB9nrUzU','KvPE6c6I5RG','lvbyjqNToMl','SzGVpT6M195','PBgt1eGBMMX','EubLiHSpXoy','fKIQqbAB1B5','dwRDCaGOUld','keORQiPC8a4','MeDRPhe72HH','lC0bPQxxwqj','tG6WP60NolB','yO3M02iEKlb','wLaa9KQUIno','GY0n6cwMe6w','Zyx3hT8cc8P','DmXDHrUTdDC','Uxms997ej9w','iUqtoxZ6uxu','sQFRZ5Waybf','qKC7rkMszh8','dylIfk0CbsF','vn7CAKcUYvm','hfHlCSu71A7','EWsDwMzYvyx','M0rHJd6qN7A','PTWaSDwLApk','H72Au0CGk0w','EXy7CVFAwle','oNpWo9vdXwr','ZZQUDCDmo4k','menxwYbF52s','K6XgPlp12e1','EuPB2aKQ2rM','saFFLR1ggc0','WwnHckTNa2j','dcp2RwR2uhs','Bhd52dVbaN5','jxqjjtX5wx6','fbi0kR4PPzn','mGAeBnykYk1','m9ycLXazGtm','DM77fRPRvau','Ve7ROfi3dVL','TFEofpIm8G5','NxjY1SMT21X','VNpCS4ez88k','vCgCIJS7sOW','yMUy7491Rz8','N46iaE7UTQB','bI4I12bFkQJ','yf0YOA2Kp1Q','wVguXLJt5rA','R82rYhRIvvb','VDfu4eWolRw','YANdW6oj7tT','QRPh5Iv1T2z','U4v0llyxKJF','h8oc7xlrJnE','A2N8cKm3GIL','oThylY7D2NL','tmDrgMaBVpg','Kvem6RY1E6t','AzlEZNdH02k','UvR8Eu5pQXu','fdReNTeAil9','EoKEjsACf5e','HRg2NJ1eGkO','RDZGXUSPakS','eUQ8SdZTnje','ehq7dDKDRDZ','FDRvlfrNG5B','vjtwH81Bugg','JrMPINkQzLC','WrwDX5UrGwz','cvA26TdaC86','PfUBisVjDhs','Y7equpFS80r','puyBWrDdi4E','ZZ5m8mwIEon','Q0f2N8LEFDE','avRflObicdJ','EHzif6rG9Sa','I6Jr0tnpRZo','gPJ3s432GIY','lJlr3zG2pml','aCOvIft61tp','pp11He3ftyD','Y6Z3wOw3CsC','t9QfC0xVCA8','LFKNQ6KCgak','IoaTHPhVBdf','tupZp0unOHt','ER8lrQrOWu4','b4A4ru9DOig','VRDdTB96FLe','fi6rWlS88qJ','aRiOYpI5s0x','liZlfgHrRpO','CcOWwhIpeLG','lcgdMJr8ozv','HDK4nLenuUU','KSd2hoMJ40u','HrcVeqd27yB','jV0pyrJxgqH','BTA74ERPVoO','MNBKbxFrO33','rqVvIKBjypm','t4f0TEXiNZh','EyvTWWXtkHG','WFR6XRInFEv','dE2b3PDnsmX','pUOUIYzkzMM','fwgSj4H5cWg','klVKW2WxVmY','hWDbNH4Ud83','sXzBtj7sCSm','vo5cSAwmPkd','DygfyuZc8lw','qX6O6Jg2j9o','gJ1iODxSbXJ','vPOU3en9hjr','qW7vc121ICO','hIYsYX2q356','r3bWOPuCDpn','R7L1kBiKyvO','QPrSRaqEwvO','QYyBWmE5sal','bgLjclSyhfA','nm8U0WnOg8k','LvC7oHyJXcC','fbJAhJ9Wnq1','I00CLaZy949','Z55CxzeTZpl','ZZ7AJk1EvZ9','MWVgc3Tcc10','k1qi2ttfXzf','otfz8A5jXGo','wJn7iRLnDYq','i2mxT2CmXpA','XcALBl8H3lT','yFWIP9paqhT','yu5uTODH5qe','QjFmMi3SpHy','utaYSJNpTK1','NJ4xsr3GYEZ','QaIOE6S6XU3','JNgOdj7O35z','d92PT0sU4UF','exlAYvVejTn','MT7agocBGXB','YBB0zk5yhLK','dZvaoEPdMq5','nYOc83yx37L','dXt0XgalFr8','sykrphiqQBv','bKK1gaSOmWD','rH2LoV7Cydl','t0miCkniV3E','FJvSU0vgDDz','tdhYl5wVddd','Jf6vxgk5vYK','FjdK9yv8DxP','GJmOssyKE57','lj5ZoJjLGyU','EBbXHHxYSI6','eGlsqi92ouo','PtInECqDg7O','g4XOYFWhn8F','ScXbC3T5ZZz','WmfP6HKo80k','bPpaRadZClx','deW5xO7WBm5','OOqaPRsEJuT','WoI07FvXQqY','EAArMFV6OFV','VjoVid0NVHG','kC8OIrb7dMg','ZZ99EiPnrtP','ME6Y2r9B1qm','FXXHKHtFiEk','lTACUgyifxy','aeH0iluOssq','ntF0BNRqvZi','rrbliRbb6JL','r4cudaM43zH','tOky2G5CTWs','OyLz4ecrxRP','RYRcIHozcFq','WpLN52wvi2N','Gim1SyGi7pm','HtyIlBDRrcq','EzaEXNrymiJ','tY2NBI2ktmI','VLMvj52zdlf','pJuwB37aVWE','ONGwZbTfffA','kLnvBnbvnAZ','WjxUfaTVE1q','bosdJCiN5vg','KLeULrvPcSD','eVqEasckOlz','HbqVXDcL0U3','iERF0VC0kgT','Ki1erA1z0OC','uYw3lrsevFH','NfZvQCv2uft','DO7T5TnatVi','jp7XtxlmzyZ','qhFMvpHGMR5','azOg97ZLMEU','Pa3rkN4Fp6J','NPY4FL5HbAP','GOnIbcP0dZh','eiAJPHA95OV','DhfaBHUuuef','WFSsNfQkY0V','O1beQvCfPAj','fNtr5q9gIFa','NpkdyCgSKWi','XBdGES3a6cU','zK2rT4lCtJK','VblgFS7XBb8','GiB1dD38EeZ','buqHLpuUsM4','ARB4EKbghNy','OWy61GnFkpc','hcIb4m33Djc','KGa3ksIUcyd','gpxYWT4giyr','a3kv5dXGYYq','DNh9pgIJQPh','msBeOPiD2jP','yv9tqHYwKr5','RyngdKRs3CP','FIzuB7sI738','cNnb9Cdn2Xx','Ts2m0FdiXRW','KNp06LMipvB','n58vRGNVovo','iWrt7T2uHpe','SFcRSqNWHiy','HJevDf84UqS','eygCWMoSTcU','TjOcCEA4jAX','xk1nvuBj21q','foOBLXDmSiz','a8P8YFC8b6Y','FuoPHcNzefc','c7nKqrDe109','ao4mWxIKiQE','JyME82yvYMc','zu43vsgz4cK','GOVHyS1JAbj','Y70NDavg2t6','QpDsWOJarP1','aIUO8BtdN6R','UosLQenI4h4','rg0NAUu6sen','dxcpnOEkXqz','d8TDSwPLmbw','OEomCUs0ecs','UL4qzwKEnw7','zdY3LnIpYtr','cihCiExl2Sw','xPRxU5UYGeH','rAofity3ivV','niUcY5EJFqd','o8klB7FY12r','wbb2ylTi4oH','ZruCIq5Bt67','h12U59pibgK','t0kmmZrwJKj','IlC6hwJt9Wr','OdPS9nmHcvV','tPCUST3KgFt','PNvDJDhIy02','jFZ32n9uCXO','FrZlL4DgHNt','CQ5hJGVOYi0','Def12VdNLeZ','laOm6D5ENc5','FfA6fx5TZ3U','OUjeaypXViq','DClHWCQp9Os','uEqHOW6b0XM','HdzURKL5Yqc','w0BzzOAT8X4','FBiEwYd8gFM','JUk3AfdqQ0l','MBgfrKxda7a','QXth2KMVUce','rPUK2yGSA3F','Cj1knKGRThp','wXWXBLucav9','E6Esj0NWnSe','qfAvOPcRcLB','fnbUmiZw8o0','EAPnx9AXZ9b','B0K5HZP2ind','aIt7FNtNDTY','nHr90O6Y62C','ZSE6cKuNk2Y','Nm1T6tbUdVY','jb3vupVuYiM','cngcpQqqEQM','PRw9nCoMH3B','MRGYqiHU30i','NWSiLyVMHz3','d3D8tjLmcEr','tA3L0JMNVv6','JZiShBqadiU','vyvyiQKnjMv','LfyLTy1EaYA','LxHz1KqufH2','MWiNJ1BdfMz','YBtKNVVI9ZK','uU1B8d7wif4','drYtZX47KsE','gKHk985UXxw','EFd9Og7CYKh','WhfLbO6XR0R','MVG3oJrlk1U','OEcp7puydVu','cLAJlibvDSf','JYkhO3e84rn','QHcgMzh58wc','g73rRR1utLI','a7lyo0FrEX3','QaaqEwYT3XS','HM16fFVGPDE','L4nYAXpzhni','vJ1JPa1tXbO','tpxe0dIfKAg','hJ7QK92HrAo','WPBvlyWFh4m','Yc9bbFJa9RM','qeBjEn8ziVM','ZZEWuTg07EX','lSulYKjlttN','vYI4VecjtGw','Y2GjF3KHCMx','KSTBR6iIms3','sbghqqSAJk6','XkrQLl5n0ui','norWTXjQEqZ','ZcvXciD1n4H','m0a9gA9an2H','d8Fsry34dpu','YdbZHaKGIRK','zC47dTSbXyk','gaJl8ockp8U','qOKOYmNoaI5','tqdr7HUOIvc','R4RKV7UBSWD','VAfdRMgn1Fg','hcRekr4Z7zf','gE3baBFOe2P','xybzcT4xQbc','MTwiTjipBP2','WdNBVsnKbGx','RXgSFPceRLR','Hyuk1LpPJvt','y7cL9ap6n4H','z7MqClfyrCH','pa1s0Kr2Xrc','Bem8ZN9twTE','t9YFK1VOO9H','SG8o8k4ncoo','x3bQjK6qmR3','aFG9MORUdes','KEmeVpNL9NE','IcFNcUc2Bxu','JJTIlea7ycW','GfDzRduN4tu','g95DSBVKb8A','wCTVky0lvGP','H2cBhEkLYKS','fXbnn8ZjNgY','w9X7JUIxPNb','fPKs2W9F8pt','AUHYN6t4vZW','ngOP5MIgYhR','LUsT88guNc9','Zkw9dngUUEE','FElD07XriFt','DZLW7Wx1A6T','sarSIH1XKfZ','VmIY7uNQ7ki','A4IrLCA3xRX','bpPsUb7koyF','oYkyYUG64gq','MTiTspO5cS0','ys9G5mNPCik','Fv00skTRnum','kkLTtVsDF4G','nQpGfuBcLhB','AcQROSsKm58','IYPaEbcCkPi','ZMB5j3shzUy','bW9diEVDugb','CRhabKhj5lb','goti2j1zvtM','sT84NygZKWd','zOOgXPTzMaF','meknu23LX3R','qRyeQlwSvcY','Z4Bilub8jPD','oBFEmDzSTPo','wqGmGBDX3Q8','RTGee8KYAed','QUlj7ZQwZqS','pnYZDXb4fiS','grnHQVAy2bk','IND4HVcpzVO','M6SHjbl4heI','WkN0gblAQTe','IVV1QQT8Er9','w7i5A1TKyCw','CiidsJ0LpzK','VjbVVqFGb7f','cXJLxK77aBY','a8qS7y8sjPM','uLqKE2BLhI4','gMDg6umc1x4','oM5mr8QEwWx','deINsTdisQY','mblKNwrLq1I','kszUyb134F8','yhOUaQ0B4HV','RWeF7Mjegjd','oZBofyGPQZp','hwtVTGyghMJ','nPq8x7eghMR','RLbGbeSEHBB','G1cPpOFmECJ','hKcfZzqRStf','htLRx9F2bEX','xPA1ZlEHJBK','pQpm9sDCfd9','Q6dYYy8kOHd','m0rtkiHX676','SjLnrVqttdb','ZDqPytCjmE1','Azb36tdrvnc','XmpVQJVTQfI','S9lgLKttxVk','sDByYFADKr3','A4CjtbuM1sV','W8BTSrLbsah','GuwQDSNXI2n','vlGzYO8W0mk','HfE9ylTZhoB','kpZlkK6TBdU','VOdKrdT7Crl','xnV00TXccE5','wCO9HQeFXab','rREori5Cygg','mpF3IoAmuEj','ZOomdDFSGO8','aWyWTRAKGYh','RATbKvBhE5K','rnO3mvH3rKk','NtZ5RPgy95S','AqeIqdHwKDa','gWQCcprb0J7','kGiterTmvtk','Wy1fWyOIfso','ReL7Uv4IgD8','FI76QhAyK2l','YVRVyjhyXhF','sCMhP4dXfzu','LToDy4KjBEq','KfnKoM0jgm2','n54p2pOEdrx','Sb4CIbz9uxn','qpVIGopuOfw','zONb1cHRNre','OU7cOYrAhXU','QRULoZMsTd2','dnguXfQKumT','dE1PF3LGx3W','ISYx92izPQ5','vBgHDKDIN2a','N9huYlLSERg','W8VeSjxymF0','CbFqEM3bj0G','jKJL2x28H6U','P7gep3ohH9P','MRKFd4kkOx5','tMh4zOiRWO3','Y9mx1YywCmF','woiuovwfn5X','cEjRzPmhcZ6','jzulxWZZvGI','Sq34pbt0v9X','aVKe6wJ4ilz','KfHQOoCAZoe','CE5SStzAhj3','PRv2pPsjOwM','acJ0hkOhYPs','GQG842E01Bi','OHbIyMe2FRn','QjA4RjCEtLX','FTYohEXgtDq','dvIj7QNEP8n','B3qQtIKZxT5','iPIL7k31sEP','MmHi3Q6axII','OlzkgYbJ2nk','XeKQxQtKXLa','GNSUBleYjYM','IVdVCPtHXYg','Rc3zEhuEfOp','IR9SWNQHctI','be8kQKNVB3u','K9gYKbMINBA','Ym67BMrz3Zg','VOihore18j3','cEU5YIsrs6e','Ni0eEC5qQ82','c1BkWCqA8qQ','SCevGYgwBPi','Zp7ExtL0Y5J','tCNZ5vo1xQQ','FzcNdDS1fQz','bRD7QOK4H8V','Y9MlaidtEkk','DEhmneoej8T','QiKHBinjkyt','FfgqGcTNzF4','q1IuNHli0Ex','cEUGofrYIuA','Gzs1Cs4OQKy','Zu7KblHB0A3','Oz1pwMo7KOE','UULZLk35PTf','S7PJykCNijo','P0rEMDr2QSn','ODWfXQhFD77','SPeUoVk6oON','MTayB6PR4s5','vNxR1V6hIsG','dEhLA1HtvEY','tl019VHxg4J','jZRP4zKtDRx','RPJH1ribf3Z','hLtBLXuOWEL','i1o9hED2Qer','zQo3sHWsbVy','KMjp2J4W9UD','zagvt8tEODc','dQgpi8bgdBI','JigBnWPQM1A','IcQeksWX77w','hWV9XirpbDf','hhmr9aBzpqe','cqVpmsypkLS','C0k1N9qVcSi','tUnS5eNKGpR','H3OeVleygaM','dvUwiF23ITA','z6QG3ZLIV7q','gtC2kzXhLMB','cd58mxmM0pn','BNTzXz27ukw','Mip3bDqKCCb','Pq62RXQfGYe','GcVHlG3VR4n','Yy99D3ocpXq','uPGjp9tJv56','K26taF0f43H','la1H0BPhzCa','Xtg3k9nAb2h','d4bSX4mp7iI','EmJ8M3BkFai','xr9fmYQ0gj7','iI5V46gq9mq','uAO53twA7uz','aRv6zK9YwSx','q02jx87E4QC','Qp9hQtdOR6l','U1LRafARPuD','cfLCneigdn7','pNHkqyTfdpm','zYdZ13qHrZI','caI5CfxzFZp','jcP7W62Z4LR','XT3WGPAk5qX','gQqbzlGHkcl','gDbb4ixzqz0','NhtQ2inUl9I','yZtXatYsH0C','LW8pdOa9YfS','sgXGpqAnFnU','NM8wMHcc2g5','o1YCOQTdHxG','wxn2iEU00Bx','NGLaHmQq8Wm','gUObARZpqzg','iHqXYCFD4aG','iuyLYz8ugKf','ZfUsRZwRkgC','CCCRrngzs98','Biz7Keo59qz','G2T6PHzKz8D','GZH9Y8eDfBL','PfK1oL6XTjv','YaILg3CG78q','d8pI5Kw8o1B','ThAFYc9WVVv','crPHzWRZWD6','f3cE1h6X8S2','yn3jjgkAHYo','IjYwJoxADxh','VzJrtLmWwQ9','UiVP4XhOPOZ','BSPNmfMVfVk','iueESpOkAV9','rXtoKOiIkFL','nX4KD5MERmQ','iVzmP7ZzBnJ','u2MTIls1yMk','TUysQ3o4p0s','blyOBDnzpKh','o2gXyfXR0Hf','tolttiPtD5u','OA77mAKOHMo','wf7JQkOJpsx','KLGUXcU3gne','Z38j216gAFj','XxpNGQhnHGL','uB1pD4NYkw1','DC8DrimBGNh','EFcrcTbcCoM','HokYsEIAKgR','Cosz8rdb7Cl','G51ZOp6cZW5','wDQ3PnJeXpt','bHjelOT2kYl','G1AZjhxWCxG','GYp3tvYjykb','DW0DBvPKuro','mZOPLLMntFq','apoCNSsgiy4','KCmb4ZLjQ3R','AWOLezcmKI2','jxVslBUggtS','IwzFzpPtCfK','qSaDcaPv3u2','D5slnzo6zFt','lLodgTTk85r','wki0r71JZ1y','R0nRh50doN0','RVCB15SfgSj','X9i62rFoWlm','vVtyojxCak4','lu4S5LiDdqm','NxeYxLAv6WS','NkQPKTWO17h','nNj6FlvFnvz','CVA1V7Gujcp','xsy6MmmYlNk','VE6QEIF3ClG','CbRo02X6jTm','ElJ13oG9RYL','YyelYyLPvd8','FlX9W3OzdgQ','ybnwqYWHB7E','RRxzgZJ1L2Q','gGs9e5ux5Ff','pRJs5EnmWij','LBPMtYIiYHy','XjayD3iq9BS','IqdiRWjrbZ6','CNM1TrHyqIU','uatakqrkYuA','PlYeXN4aUZW','cD9ZIqU8TNH','djgpf87VG5y');
 
--- Delete from dependent tables
-DELETE FROM datavalue 
+-- Verify redundant categoryoptioncombos
+SELECT COUNT(*) AS redundant_coc_count 
+FROM categoryoptioncombo 
 WHERE categoryoptioncomboid IN (SELECT categoryoptioncomboid FROM _bao_redundant_coc);
 
-DELETE FROM categorycombos_optioncombos 
-WHERE categorycomboid IN (SELECT cc_id FROM _bao_redundant_cc);
+-- Delete COCs
 
-DELETE FROM categorycombos_categories 
-WHERE categorycomboid IN (SELECT cc_id FROM _bao_redundant_cc);
+DELETE FROM categoryoptioncombos_categoryoptions where categoryoptioncomboid in (select categoryoptioncomboid from categoryoptioncombo 
+WHERE categoryoptioncomboid IN (SELECT categoryoptioncomboid FROM _bao_redundant_coc));
 
--- Delete redundant categoryoptioncombos
+DELETE FROM categorycombos_optioncombos where categoryoptioncomboid in (select categoryoptioncomboid from categoryoptioncombo 
+WHERE categoryoptioncomboid IN (SELECT categoryoptioncomboid FROM _bao_redundant_coc));
+
 DELETE FROM categoryoptioncombo 
 WHERE categoryoptioncomboid IN (SELECT categoryoptioncomboid FROM _bao_redundant_coc);
 
--- Delete redundant categorycombos
+
+-- Delete CCs
+
+DELETE FROM categorycombos_categories where categorycomboid in (select categorycomboid from categorycombo 
+WHERE categorycomboid IN (SELECT categorycomboid FROM _bao_redundant_cc));
+
+
 DELETE FROM categorycombo 
-WHERE categorycomboid IN (SELECT cc_id FROM _bao_redundant_cc);
+WHERE categorycomboid IN (SELECT categorycomboid FROM _bao_redundant_cc);
+
+
+-- Verify deletions
+SELECT COUNT(*) AS redundant_cc_count 
+FROM categorycombo 
+WHERE categorycomboid IN (SELECT categorycomboid FROM _bao_redundant_cc);
+
+SELECT COUNT(*) AS redundant_coc_count 
+FROM categoryoptioncombo 
+WHERE categoryoptioncomboid IN (SELECT categoryoptioncomboid FROM _bao_redundant_coc);
+
 
 COMMIT;
