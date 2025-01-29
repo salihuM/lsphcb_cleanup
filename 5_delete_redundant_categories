@@ -1,23 +1,35 @@
 BEGIN;
 
--- Create a temporary view to identify redundant categories
-CREATE TEMPORARY VIEW _bao_redundant_categories AS
-SELECT categoryid, uid, name 
+-- Create a temporary support table for data elements to be deleted
+CREATE TEMP TABLE _bao_redundant_categories AS 
+SELECT categoryid, uid 
 FROM dataelementcategory 
-WHERE categoryid NOT IN (
-    SELECT categoryid 
-    FROM categorycombos_categories
-);
+WHERE uid IN ('XO8S7oyHa0Z','XivoktjiULY','JKrQzIKo9G9','bZ6uVXkkG48','cS9TGWHMCep','XZiEVX8Gc9U','xDvymM6anZX','z3ylZ2tCKKP','T4m1wptnX5D','jJ7XKCRPaPw','dR6JU5gFvRA','AbglItJaBv4','KXvZX7KXUyW','cYvmOmmzQpq','lFOMGIPpXPB','uoz96o1Z1ag','eD39OmhFu8e','A6nCqCabAhX','BuWN2ETlzR4','Qpcwn7PcdJ3','GFHmD0TxXTq','ftY8QmRKL3T','bO1ZfXePJjD','gBcytnrSMFv','l1uhb6l3N5X','ksAknx136Ri','PlWSJNKPtY5','d8GDGMts0WD','mXQDvkroP26','PmBQCYBifKN','v4VIAV6ZHLx','l9mifq7VNVo','yo94kVgsILN','atW00ScJVWr','nUQyr5FF1cI','BWSV9K5zbcW','sYT8hwilLZO','KyOrBYPt7fj','bOL96Vdd1PM','gvouMf8sojT','KBWMycGciPs','lrVzahV7kWy','i3RqX00Tc3r','j7DlWDL3WLr','W2BEq4zGFIG','cNesJfHV8Fn','QF3pMUIxtyX','md1vrAKvFqf','R0hFYbfXqKA','D5yvcKqOZ4S','gzSQSG8NeXU','FFjswsZ1CLR','MmFe1QalWVr','bpj1teT9y7m','F6fsP9xqPK2','v5wz4NYNLv5','kYRXGIuOfI2','FxFfIY3XLYi','pdUrNT5vWvl','NLIFDzUarol','OGgUA1ltsrL');
 
--- Delete redundant categories based on the temporary view
-
-DELETE FROM users_catdimensionconstraints 
-WHERE dataelementcategoryid IN (SELECT categoryid FROM _bao_redundant_categories);
-
-DELETE FROM categories_categoryoptions 
+-- Verify redundant categories
+SELECT COUNT(*) AS redundant_cc_count 
+FROM dataelementcategory 
 WHERE categoryid IN (SELECT categoryid FROM _bao_redundant_categories);
+
+
+-- Delete Categories
+
+
+DELETE FROM users_catdimensionconstraints where dataelementcategoryid in (select categoryid from dataelementcategory 
+WHERE categoryid IN (SELECT categoryid FROM _bao_redundant_categories));
+
+
+DELETE FROM categories_categoryoptions where categoryid in (select categoryid from dataelementcategory 
+WHERE categoryid IN (SELECT categoryid FROM _bao_redundant_categories));
 
 DELETE FROM dataelementcategory 
 WHERE categoryid IN (SELECT categoryid FROM _bao_redundant_categories);
 
-ROLLBACK;
+
+-- Verify deletions
+SELECT COUNT(*) AS redundant_cc_count 
+FROM dataelementcategory 
+WHERE categoryid IN (SELECT categoryid FROM _bao_redundant_categories);
+
+
+COMMIT;
